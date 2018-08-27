@@ -155,9 +155,13 @@ For now.
 
 # Let's dive into the components.
 
+---
+
 # Navigation
 
 ---
+
+## "Official" Activity Navigation
 
 ```java
 public void sendMessage(View view) {
@@ -170,6 +174,8 @@ public void sendMessage(View view) {
 ```
 
 ---
+
+## Traditional Activity Navigation
 
 ```java
 class SomeActivity extends Activity {
@@ -205,7 +211,11 @@ class SomeActivity extends Activity {
 </navigation>
 ```
 
+---
 
+```java
+ Navigation.findNavController(view).navigate(R.id.actionName);
+```
 
 ---
 
@@ -280,3 +290,5 @@ Architecting an app with MVP and ViewModels
 Firebase and Android Architecture Components: fit like a glove
 From AlarmManager to WorkManager
 Rinsing the Brush: Picasso 3.0
+
+Slides: github.com/kurtisnelson/presentations
