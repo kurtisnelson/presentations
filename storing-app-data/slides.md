@@ -316,19 +316,18 @@ SimpleStoreFactory.create(context, MY_NAMESPACE).use {
 
 # Fundamentally Async
 
-SimpleStore uses a shared thread pool to enqueue IO operations across all callsites. Internally, each instance has an OrderedExecutor to ensure FIFO behavior is observed by the consumer.
+## Shared thread pool to enqueue IO operations across all callsites
+## Internally uses `OrderedExecutor`
 
 ^ When the consumer is done with the store, they call close which prevents new operations from being enqueued and allows existing operations to complete.
 
 ---
 
-# Fundamentally Async
+# Why not RxJava?
 
-## Why not RxJava?
+## `Single.fromFuture` instantly goes from ListenableFuture to RxJava.
 
-tldr; `Single.fromFuture` instantly goes from ListenableFuture to RxJava.
-
-`ListenableFuture` is already used internally by many Google dependencies, and Play Services is considering moving to it from their custom Task.
+^ `ListenableFuture` is already used internally by many Google dependencies, and Play Services is considering moving to it from their custom Task.
 
 ^ ListenableFuture uses standard java executors which are easy to understand. Rx schedulers have nuance that can lead to issues with highly parallel I/O. (See Utkarsh + Yohan's DCSF18 threading talk)
 
@@ -336,17 +335,21 @@ tldr; `Single.fromFuture` instantly goes from ListenableFuture to RxJava.
 
 # Never Emits Null
 
-`null` in an Rx-stream or `ListenableFuture` is undesirable. When a key is not present on the disk, SimpleStore emits the 0-length `byte[]` equivalent of the value. This means many common use cases such as a counter never need a null-check.
+## `null` in an Rx-stream or `ListenableFuture` is undesirable
+## 0-length `byte[]` equivalent of the value instead
 
-If presence is important for a use case, a boolean isPresent can be stored along side the payload key.
+^ This means many common use cases such as a counter never need a null-check. If presence is important for a use case, a boolean isPresent can be stored along side the payload key.
 
 ---
 
 # Serializes to byte[]
 
-In a JVM-world, serializing to `byte[]` is performant. Using a built-in primitive instead of JSON or XML eliminates parsing and metadata overhead.
+## Base class only handles `String` and `byte[]`
+## Allows choosing your own object serialization
 
-Using `byte[]` also unlocks easily layering a format such as Protocol Buffers or flatbuffers on top. The core class of SimpleStore only has methods for `byte[]` and `String`, keeping the core library light weight.
+^ In a JVM-world, serializing to `byte[]` is performant. Using a built-in primitive instead of JSON or XML eliminates parsing and metadata overhead.
+
+^ Using `byte[]` also unlocks easily layering a format such as Protocol Buffers or flatbuffers on top. The core class of SimpleStore only has methods for `byte[]` and `String`, keeping the core library light weight.
 
 ---
 
@@ -358,14 +361,12 @@ Using `byte[]` also unlocks easily layering a format such as Protocol Buffers or
 
 # Releases Resources
 
-If an activity is destroyed by the OS, the in-memory cache can easily go away with it. Singletons are still a valid pattern if a key is needed across the entire lifespan of the process.
+## When a namespace is closed, resources are freed
+## Optional LRU mode for in-memory cache
 
-The in-memory cache can optionally be configured as a LRU.
+^ If an activity is destroyed by the OS, the in-memory cache can easily go away with it. Singletons are still a valid pattern if a key is needed across the entire lifespan of the process.
 
 ^ For any storage object, it generally doesn't need to stay in memory longer than the feature
-
----
-
 
 ---
 
@@ -380,11 +381,11 @@ The in-memory cache can optionally be configured as a LRU.
 
 # Supports Configurations
 
-When opening a namespace, an optional configuration can be passed.
+## When opening a namespace, an optional configuration can be passed.
 
-Currently `NamespaceConfig` works like an enum, but can be turned into a builder pattern as features are added.
+## Used to place on disk
 
-When combined with a "namespace", it refers to a specific folder on disk.
+^ Currently `NamespaceConfig` works like an enum, but can be turned into a builder pattern as features are added.
 
 ---
 
@@ -392,7 +393,11 @@ When combined with a "namespace", it refers to a specific folder on disk.
 
 ## Cache
 
-`SimpleStoreFactory.create(this, "<some-uuid-or-name>", NamespaceConfig.CACHE)`
+```java
+SimpleStoreFactory.create(context,
+  "<namespace>",
+  NamespaceConfig.CACHE)
+```
 
 In the future, we can optimize memory use for you.
 
@@ -404,9 +409,11 @@ In the future, we can optimize memory use for you.
 
 ## Non-critical
 
-`SimpleStoreFactory.create(this, "<some-uuid-or-name>")`
+```java
+SimpleStoreFactory.create(context, "<namespace>")
+```
 
-This is the default mode and should suffice for all data that is not on a hot-path.
+Default mode, good for data that is not on a hot-path.
 
 ---
 
@@ -414,9 +421,15 @@ This is the default mode and should suffice for all data that is not on a hot-pa
 
 ## Performance Critical
 
-`SimpleStoreFactory.create(this, "<some-uuid-or-name>", NamespaceConfig.CRITICAL)`
+```java
+SimpleStoreFactory.create(context,
+  "<namespace>",
+  NamespaceConfig.CRITICAL)
+```
 
-Informs SimpleStore that data should stay in memory as long as the store is open. Good for authentication tokens or other global widely-used state.
+Keeps data in memory as long as the store is open
+
+^ Good for authentication tokens or other global widely-used state.
 
 ---
 
