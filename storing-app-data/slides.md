@@ -459,13 +459,26 @@ If you want to store more than just `String` and `byte[]`, `PrimitiveSimpleStore
 
 # SimpleStore for Protocol Buffers
 
-Companion artifact of `simplestore-proto` enables storing protoc generated POJOs directly.
+---
 
-Atomically load complex models from disk.
+# SimpleStore for Protocol Buffers
 
-gRPC users are already using protos for models.
+## Companion artifact of `simplestore-proto` enables storing protoc generated POJOs directly.
 
-Uses Google's Lite protoc plugin, contibutions of other runtimes welcome.
+---
+
+# SimpleStore for Protocol Buffers
+
+
+## Atomically load complex models from disk.
+
+## gRPC users are already using protos for models.
+
+---
+
+# SimpleStore for Protocol Buffers
+
+## Uses Google's Lite protoc plugin, contibutions of other runtimes welcome.
 
 ---
 
@@ -474,7 +487,7 @@ val proto = Demo.Data.newBuilder().setField(editText.text.toString()).build()
 Futures.addCallback(
    simpleStore.put("some_thing", proto),
    object : FutureCallback<Demo.Data> {
-     override fun onSuccess(s: Demo.Data?) {
+     override fun onSuccess(payload: Demo.Data?) {
        editText.setText("")
        button.isEnabled = true
        editText.isEnabled = true
