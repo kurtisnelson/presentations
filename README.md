@@ -12,4 +12,6 @@ Almost every single app needs to store important pieces of data such as a sessio
 
 As a mobile codebase grows, there are new types of challenges developers must tackle. One of the common challenges is the scalability of build systems like Gradle. Uber, Google & Facebook use Buck and Bazel to work with large codebases. In this talk you will learn how these alternative build systems impact both the developer experience and the performance of builds. You will also learn if, when and how you should switch to them for your own codebase.
 
+[Slides](https://speakerdeck.com/kurtisnelson/working-with-alternative-build-systems)
 [Video](https://www.droidcon.com/media-detail?video=380844791)
+[Text](https://github.com/kurtisnelson/presentations/blob/master/working-with-alternative-build-systems/presentation.md)
