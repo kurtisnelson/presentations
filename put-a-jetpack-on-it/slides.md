@@ -64,19 +64,19 @@ We want to allow developers to use Compose soon, but are going to have to wait f
 
 
 ---
-### 	At a large organization, we to teach about it, roll out access, review new usage, and handle deprecation.
+### 	At a large organization, we need to teach about it, roll out access, review new usage, and handle deprecation.
 
 Beyond just the code itself, at a large organization we have to figure out how to roll out the knowledge on using the technology to 100+ engineers, how to make sure we don’t back slide, and when we finally say, “no, you can’t do that anymore”
 
 ---
 # Migration
 ## We need to make sure it is safe to swap code out.
-A migration plan need creating: do teams have to migrate their call sites, do we just deprecate it in place, or can we centrally hot swap it out, preferably under experiment.
+A migration plan needs creating: do teams have to migrate their call sites, do we just deprecate it in place, or can we centrally hot swap it out, preferably under experiment.
 
 ---
 # Secret history lesson time
 
-I happened to work at google around the time Jetpack came to be.
+I happened to work at Google around the time Jetpack came to be.
 ---
 # While you were using ALL the Square libraries...
 
