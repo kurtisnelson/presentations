@@ -1,9 +1,9 @@
 # Putting a Jetpack on your legacy codebase
 
-## Kurt Nelson
+## Kurt Nelson (he/him)
 ### Android Platform at Pinterest
 
-Hey everyone, Kurt from the Pinterest Android Platform (or Android Experience) team.
+Hey everyone, Kurt from the Pinterest Android Platform (or Android Experience or AndroidX) team. We actually call ourselves the AndroidX team internally and we claimed it first!
 
 ---
 What do I work on?
@@ -147,7 +147,7 @@ Before Jetpack, engineers at Pinterest had to do something. Fragments were still
 ---
 # Screen API
 	Our innocent looking Fragment replacement.
-```
+```kotlin
     fun bind(screenDescription: ScreenDescription)
     val isScreenBound: Boolean
     val wasScreenEverBound: Boolean
@@ -172,7 +172,7 @@ At the time, it was the right thing to do! Fragments were overkill especially co
 ---
 # The Gotcha
 Our problem was in the way we bound our Screens. You don’t see immediately from the API the definition for `ScreenDescription`:
-```
+```kotlin
 interface ScreenDescription : Parcelable {
     val screenClass: Class<out Screen>
     val screenTransitionId: Int
@@ -299,7 +299,7 @@ But shimming it underneath
 
 ---
 # Putting a Jetpack on your legacy codebase
-## Kurt Nelson
+## Kurt Nelson (he/him)
 ### Android Platform at Pinterest
 	Mastodon: kurt@nelson.fun, kurtisnelson on the socials
 	 [github.com/kurtisnelson/presentations](https://github.com/kurtisnelson/presentations/)
