@@ -55,7 +55,7 @@ On the flip side, we still have not given Jetpack Compose the platform team bles
 ---
 ### Handling Android Changes
 # Jetpack Compose
-	See the panel from yesterday with my teammate Christina Lee!
+
 We want to allow developers to use Compose soon, but are going to have to wait for Google to finish some performance improvements first before we can have open season for converting features.
 
 ---
@@ -171,7 +171,7 @@ At the time, it was the right thing to do! Fragments were overkill especially co
 
 ---
 # The Gotcha
-Our problem was in the way we bound our Screens. You don’t see immediately from the API the definition for `ScreenDescription`:
+One problem was in the way we bound our Screens. You don’t see immediately from the API the definition for `ScreenDescription`:
 ```kotlin
 interface ScreenDescription : Parcelable {
     val screenClass: Class<out Screen>
@@ -191,6 +191,7 @@ Look at that code for a second and think about how `bind` might work and see how
 # Reflection!
 #### And basically our own version of a FragmentManager
 #### And our own version of Navigation
+#### And constructor injection
 
 On its own, this really wasn’t bad. FragmentManager itself does similar things with Class-lookup map itself to handle transactions and such. The argument bundle is also in this parcelable description and not part of the construction of a Screen, so it is not available as early as in a proper fragment.
 
@@ -224,8 +225,14 @@ And of course we need to do this all safely- hopefully without really having to 
 
 ---
 # Legacy Async Code
-### We *just* made coroutines GA
+### We made coroutines GA
 We’re also just now introducing coroutines, so there is yet another factor to consider, when do we leave RxJava2 that makes you cry a little inside alone when migrating around it?
+
+
+---
+# When is the pain worth it?
+	For navigation, we are not sure.
+In the case of Jetpack Navigation, it is a slog of a migration as every one of our hundreds of fragments needs individual attention.
 
 ---
 All of these discussed items are true for any library upgrade or addition but
@@ -234,6 +241,36 @@ All of these discussed items are true for any library upgrade or addition but
 Certain library changes and mutations over the years have been pretty drop in place, think image loaders: they basically all take in one line a context, what to load, and where to put it. Even Dagger to Hilt isn’t bad as Hilt is set on top of Dagger, you don’t have to do the entire app in one pull request.
 
 ---
+
+# Where are we now?
+
+---
+
+# Full Hilt
+## Complete
+
+---
+
+# Jetpack DataStore
+## In validation
+
+---
+
+# Compose
+## Blocked on performance improvements
+
+---
+
+# Lifecycle
+## Using normal androidx.Lifecycle patterns
+
+---
+
+# Navigation
+## We have a proof of concept
+
+---
+
 # Outsourcing from your team
 ## What can others do?
 Either to feature teams or contractors if you have them, what turn-key migrations can someone else do without needing the full context? 
@@ -276,26 +313,6 @@ This is where teams are encouraged to at their own pace to manipulate their own 
 #### Migration Options
 # Distributed mandate
 This is the worst one. “Migrate all your code by date X or executives will chase you down.” Mandates having someone project managing, and likely requires approval from far above the infra team. The main example here is a security related issue or a business threat. This is exactly what we hope to avoid by getting off of legacy systems in the first place.
-
----
-# Where are we now?
----
-
-# Full Hilt
-## Early 2023
----
-# Jetpack DataStore
-## In progress
----
-# Compose
-## Blocked on performance improvements
----
-# Lifecycle
-## Using normal androidx.Lifecycle patterns
-But shimming it underneath
----
-# The rest?
-## Maybe I’ll tell you next DroidCon
 
 ---
 # Putting a Jetpack on your legacy codebase
