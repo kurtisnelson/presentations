@@ -1,0 +1,407 @@
+Adam Greenberg &
+Kurt Nelson
+
+400 Fragments in 40 Days
+
+Thank you for coming to our talk
+2
+Kurt Nelson
+Android Engineer
+Kurt Nelson
+Android Engineer
+Kurt Nelson
+Android Engineer
+Adam Greenberg
+Android Engineer
+Adam Greenberg
+Android Engineer
+Adam Greenberg
+Android Engineer
+
+3
+3
+We are here to discuss the project we both spent a few months on
+
+And what we did to get this project that was scoped out for 4 months to be delivered in 40 days.
+
+Why we’re here
+SOLO ADAM
+
+
+4
+2
+3
+4
+5
+1
+Teams & tooling
+Stats, metrics, & objectives
+400 Fragments
+In 40 days
+Wrap up
+
+A 10x engineer doesn’t believe in computers, only software. They only eat freshly printed pages of source code from the latest version of the Linux kernel.
+5
+We are not 10x engineers
+This talk is not about how to be a 10x engineer, but how to hopefully look like one in hindsight when things go wrong
+
+6
+Team
+This section will cover: who are we, what are we working on, and more importantly for me at least: who are the people who make us look good?
+
+The Pinterest App is old enough to go to high school.
+7
+As such, the Android app is built and maintained by a number of teams:
+Our team’s job is to build the logic between the features and the system.
+This leaves us with a lot of functional systems that are no longer excellent. 
+Eg: EventBus, RxJava, Volley, Java, Realm, React Native, RenderScript, etc.
+The Pinterest app is 14 years old.
+
+If you take nothing else away from this presentation make sure you remember that: libraries beginning “R” will lead to tech debt and job security.
+
+8
+What makes a 14 year-old application work to serve half a billion people?
+IDE: Android Studio
+Build: Gradle Enterprise, groovy & python scripts, and Buildkite
+Architecture: Multi-module, monolithic, (mostly) single-Activity application
+
+
+Tooling
+We also had a colleague give a great talk last year about our modern architecture and how we are trying to actively undo all of our bad decisions. If you are interested, it was done presented by Christina Lee and you can watch it online 
+
+9
+The numbers that reflect what we do.
+Stats, Metrics, & Objectives
+
+12,819 commits
+10
+Last year our codebase had over 
+
+~90 FTE
+11
+The Android team is made up of 
+
+43 releases
+12
+The Android app had 
+119 if you count all the dot releases.
+We release on a weekly basis, rolled out over 5 days.
+
+
+Our team name is “androidx” (we had it first)
+13
+a bit of historical context.
+Before we get into more details in this talk, we need to discuss the history of who our team at Pinterest is.
+We had this name for “Android excellence” for almost a year before the libraries we all know were released.
+That means we have/had our own hand-rolled solutions for things which would be given to us automatically in Jetpack like: Architecture Design Patterns (MVP), Data, and Lifecycle and Navigation.
+
+
+14
+Seven years ago, before a Google IO keynote introduced Jetpack navigation, we had our own complicated mechanism that determined how the application lived and was traversed.  
+Something done right that is now wrong is worth redoing.
+
+Optional (Adam): Anecdote about joining and being so proud of the MVP architecture we just completed migrating to when sitting in the audience at I/O and they announced all the new features releasing.
+What so did our custom Navigation framework look like?
+[SWITCH TO KURT]
+
+15
+ScreenManager's role is to construct Controllers and their Views from a Screen definition.
+ScreenManager
+The foundation of our architecture was the ScreenManager. Its primary role was to create Controllers and their respective Views based on a Screen definition. The ScreenManager facilitated tasks such as adding and removing screens, handling back button events, animations, and more.
+However, unlike the FragmentManager and Fragments, the ScreenManager does NOT manage savedInstanceState. This meant we had to handle state preservation ourselves within our custom views.
+
+Here are some of the key aspects we managed ourselves:
+Tabs and our custom bottom navigation bar
+Latest animations, with the ability to reverse them
+The backstack and a nested list of backstacks within the main backstack
+The ScreenManager also provided basic functionalities such as:
+Adding and removing screens
+Peeking at the currently visible screen
+Popping different tabs and screens off the stack
+Cool down/warm up processes
+Handling insertion listeners and side-effects
+Querying screens
+While it did include a method to save instance states, this had to be manually invoked by the Fragments or Views hosted as “screens.”
+
+
+16
+The NavigationManager is responsible for handling the application navigation.
+NavigationManager
+Next, let's talk about the NavigationManager. The NavigationManager is crucial for managing application navigation. It is designed to receive [Navigation] events and handle them efficiently.
+Key attributes of the NavigationManager:
+Activity Scoped: Each Activity gets a single instance of the NavigationManager, enabling seamless integration with Android's back stack.
+This scoping ensures that the navigation manager is tightly bound to the Activity lifecycle, simplifying navigation and state management.
+(Optional) Quick poll:
+Does anyone remember the time before Fragments? Before upward navigation when app navigation was more cumbersome and less intuitive?
+
+
+17
+The NavigationManager is responsible for handling the application navigation.
+NavigationManager
+So what did it really DO?
+You may recognize this from Android
+The way it worked paralleled stock Android for the lifecycle, 
+For navigation, it would receive a Navigation event
+The navigation event had a associated Fragment::class
+We then used a custom Fragment Factory which allowed non zero-arg constructors
+The nice thing was that our Navigation events were statically created from code generation, so we could easily maintain a list of “screens” in the app without having to something crazy like grep all the instances of supportFragmentManager.commit(), etc
+We also didn’t have to worry about commit allowing state loss…mostly
+
+18
+Bottom on-screen navigation and Floating Action Buttons.
+Or how did we get here on purpose?
+How did we get here?
+Let’s delve into some challenges and needs we encountered:
+Custom Logging Needs: Our custom logging requirements weren't fully addressed by standard solutions.
+Test Environment Needs: We needed a way to programmatically drop into a specific screen or flow using Espresso for testing.
+Problems with the Support Library:
+Bug Tracking: Attempting to track bugs for the Support Fragment Manager was challenging. The repository lacked a reliable way to quantify the number of reported bugs.
+Warm Start/Cold Start: We needed customizable behavior for different app start scenarios.
+React Interoperability: Integration with React screens demanded better interoperability.
+User Experience Issues: Managing the Bottom Navigation bar and back navigation bar was problematic. Users frequently had issues distinguishing between home and tab clicks, and we needed a better way to manage these.
+getChildFragmentManager(): Early on, we faced multiple issues using getChildFragmentManager() and executing or executing pending transactions reliably.
+You might recall that Square published a rather scathing blog post a few years ago, advocating against using Fragments altogether. It was pretty convincing, highlighting the mess that the backstack could become when dealing with navigation.
+
+
+19
+Or what enabled us to get the green light to finally burn this pattern to the ground?
+Forcing functions
+This system worked and compounded and worked and evolved.
+
+Then two things happened:
+Compose
+Restrictions on non-SDK interfaces
+SO MANY GREY LISTED APIs
+
+20
+Goal: provide a solution capable of migrating the bespoke navigation system entirely to the Jetpack Navigation framework.
+Objectives
+ScreenManager and our navigation are completely unique to Pinterest and do not resemble any Google-official or popular open source libraries. 
+New Android developers at Pinterest are trapped in frequent problems and must spend a significant amount of time early in their careers learning how to use it for simple screen movement. Furthermore, the code we use for navigation includes APIs that Google has greylisted, indicating that access may be restricted in future OS versions.
+Goal: provide a solution capable of migrating the bespoke navigation system entirely to the Jetpack Navigation framework.
+
+21
+400 Fragments
+STILL KURT
+
+MVP we wanted
+22
+We went into this with super high hopes that we could go in behind the scenes and rip the guts out in a way to get us to the Jetpack Navigation library.
+(maybe) We are one of the only major apps without any Compose in main paths, so Compose nav didn’t make sense
+One of the biggest pain points in the app was not knowing what screens navigated to which and having serious envy of apps which did
+Because of the current state of the application, we went through a very long debate over whether we take a phased deployment approach, in which each Fragment migration becomes a little island, enabling for a piecemeal migration to Jetpack Navigation (what we will call Jetpack)
+Or a proposal similar to the first, in which each Fragment is designed to function with standard Android FragmentManager and can survive in both the legacy system and vanilla Android, followed by a wholesale migration of all Fragments to vanilla Android (what we will call Fragment Transactions).
+Eventually, we settled on Jetpack Navigation because it allowed us to:
+Final result we want to end up with
+Clean and obvious cut to Pinalytics V2
+Hilt and DI graph is best practice.
+We know how to write integration tests
+Easy to migrate leaf Fragments 
+Simple to use with SBA, unknown on Fragment transactions.
+Also, because the estimated time was much less due to all the tech debt.
+
+23
+Problem: Navigation, like FragmentManager transactions, necessitates zero argument fragment constructors.
+Result: Failure as a result of attempting to make too many adjustments at once. Learning was that we must first disassemble our custom architecture.
+
+Attempted Task 1: Launch a fragment via Jetpack Nav
+
+24
+Problem: Our base fragment that everyone inherits from has constructor parameters. 
+Attempted: Switch to field injection
+Result: With the way we built on top, as soon as any field was injected, we couldn’t guarantee the order of injection versus access. Tedious.
+
+Attempted Task 2: Move to field injection in base fragment
+We had manually written injection via BaseFragmentDependencies.
+But the stock fragmentmanager cannot construct fragments that have any custom parameters.
+Eliminating Complex Logic:
+This solution required us to remove the convoluted logic known as BaseFragmentDependencies, which every fragment was receiving upon instantiation. By eliminating this, we simplified fragment management and improved modularity. This was a slow burn down of moving to field injection and insuring the access 
+
+
+25
+Problem: All of our fragments extend from a root fragment. Can we change it so that when using field injection, it won’t break the entire application.
+Result: Ability to launch the a demo fragment via Jetpack navigation!
+
+Attempted Task 3: Fork the base fragment 
+But then we have to maintain a fork… of not just the base fragment
+
+Simplify things to make it easy
+26
+Our app has a fun little developer playground that allows you to have an sandbox in the app.
+Build a playground
+We have a dev menu like many apps do… let’s try that!
+
+It did become possible to launch arbitrary fragments in the app as long as they were migrated to be launchable without parameters.
+
+27
+Problem: As a result of inheritance as a design pattern we were left with root-ish fragments still in java.
+Result: Successfully integrated in app and in developer menu playground.
+
+Attempted Task 4: Kotlin convert a root fragment
+
+Problem: We needed some way to get the system to use the Jetpack navigation standards
+Result: The forked fragment can be compiled, but there is no good way to launch the fragment from our current custom architecture. We will need to build out the XML graph and the relevant pieces to support navigation onto and off of the surfaces. 
+
+28
+Attempted Task 5: Fork a fragment to Jetpack’s NavHostFragment.
+This is where things went poorly.
+
+We needed to jump in and out of Jetpack’d fragments from our custom screen manager, while maintaining a backstack.
+Turns out the XML graph from navigation is built for one entry point as a root of a tree.
+Got hacky!
+Got sad.
+Filed bugs.
+Got told we were holding it completely wrong.
+
+Problem: We give up. We just want to make sure we can launch fragments via FragmentManager transactions if we need to.
+Attempt: Manually scrub constructor parameters from fragments and ensure they can be launched traditionally with just args + field injection
+Result: Prototype success!
+29
+Attempted Task 6: Remove the need for fragment dependencies.
+But…. we have over 
+
+“Success is most often achieved by those who don't know that failure is inevitable.”
+30
+SOLO ADAM
+
+
+Coco Chanel quote
+This slide layout is broken which works perfectly for this segue.
+We started designing the system in the forked architecture because it felt like the simplest method to transition to Jetpack Navigation while still retaining the old logic. 
+However, after we started working on it, it became evident that we would need to develop and support a fork of all of the parent classes in this forked hierarchy due to our previous architectural choice of inheritance as a strategy. 
+Would not recommend, 1 out of 10.
+This would result in instability due to the large number of classes that would need to be maintained, as well as impracticality due to the requirement to support all logical modifications to the old fragment in a secondary location.
+
+
+
+31
+40 Days
+What happened in those 40 days to make it a success?
+
+Problem: We arrived at a great solution to get our application to Jetpack navigation and off of the bespoke architecture. The dilemma was now that it would require MASSIVE changes to the system.
+Result: Break down the project. 
+
+32
+What did we do to make the project a success
+Going back to recap: 
+
+The original plan was quite ambitious: we aimed to migrate our bespoke navigation system entirely to the Jetpack Navigation framework. This would eliminate the need for lengthy secondary projects to convert existing features.
+While this objective was commendable, it proved impractical. The Jetpack Navigation system required additional constructions, adding complexity to our tasks:
+Extra code was needed for safe argument passing.
+It involved Nav Graph XML construction.
+We also had to deal with deep linking directives.
+Given these challenges, we had to redefine the project's scope. Instead of a complete migration, we focused on laying the groundwork for future integration:
+We aimed to deliver the application into General Availability (GA) without enforcing a centralized migration.
+We avoided imposing a mandate for immediate transition, allowing for a phased and more manageable approach.
+This approach allowed us to move forward effectively while preparing for future enhancements.
+
+
+33
+We all know that projects evolve very quickly. In a well defined role, it’s on you as engineer to dictate what these become when they change. The new project became:
+Modern Lifecycle Readiness
+Lifecycle Implementation
+Navigation Implementation
+
+
+What the success metric became
+
+We knew know that there was no way to deliver our original objective in a way that wouldn’t result in a year (or multi year long effort). Therefore, we were able to evolve the story of what success is for the project by evaluating what we need and phasing things into manageable tasks.
+
+In this manner, we can split the necessary work into three measurable phrases with clear starting and stop phases that align with the work already done in exploring and preparing the system.
+
+Modern Lifecycle Readiness == Fragment Certification
+To be considered certified a Fragment must.
+ Ensure all constructors have zero arguments
+This entails the removal of all objects injected into the Fragment class via the constructor. All variables previously injected at construction time must be changed to parameter injection.
+Ensure that parameter-injected elements are not accessed until after super.onCreate:
+Currently, there might be instances where parameter-injected elements are accessed before super.onCreate is called, which can lead to unexpected behavior. This should be fixed to ensure proper initialization of the fragment.
+Test and verify the feature works as expected
+Configuration changes, such as device rotation, should not cause any loss of data or improper behavior in the fragment and the associated feature.
+When possible, test that the fragment can be launched with empty/default arguments and behaves appropriately.
+
+
+
+34
+02
+03
+04
+05
+01
+06
+Step one
+Identify the impact
+Step two
+Ensure backward compatibility.
+Step three
+Define; current, migrating and end-state
+Step four
+Mapping of legacy code to new code.
+Step fiveSet up tools to monitor progress
+Step six
+Shouldn’t take more than two lines
+Helpful steps  controlling redefinition
+No organization will implement a change unless they see the value it brings or the risks it mitigates. It’s essential to identify the risks this change addresses and develop solutions that stakeholders will define as “success.”
+
+One of the most effective strategies I’ve used to control this narrative is to discover what your boss, or other key stakeholders, need and ensure you deliver that. That should be your primary focus, as it will generate the most impact.
+
+The hardest part of a migration is the transitional phase—some users will be on the old version of the API while others are using the new version. To manage this:
+Ensure Your New Direction Has Support: Account for this transitional support in your plans.
+Have a Backup Plan: Be prepared for scenarios where things don’t work out as expected.
+It’s crucial that all internal teams and users understand what they are using, what is changing, and what we plan to achieve by the end of the migration. Well-defined steps, states, actions, and timelines are key to smoothing transitions through various migration phases.
+Here are some practical steps:
+Logical Grouping: Group your work into clearly defined states. This helps in identifying what different phases entail and in tracking progress when things go awry.
+Change Mapping: Map out old functionality to the new. This creates a change map, similar to a code diff view, allowing you to understand what's changing during the migration. It also highlights clear stop and start points for project phases.
+Dependencies: Knowing what relies on what helps scope the migration within the available time successfully.
+To further ensure success:
+Plan and Set Up Monitoring Tools: Establish reports and monitoring tools to track the migration's progress. This not only helps in managing the migration effectively but ensures that progress is accurately tracked, especially under the additional pressure from reframing the project as a whole.
+Project Execution Approaches:
+Platform Only:
+The platform team handles everything, making silent mechanical changes.
+An atomic example would be swapping out a database with minimal impact on other teams.
+Platform Led:
+The platform team leads the migration effort.
+They manage most of the process but reach out to other teams for handling edge cases.
+Migration Mandate:
+Teams are encouraged to update their code at their own pace.
+However, there's an expectation to complete these changes within a reasonable timeframe.
+Parallelized Execution (Fastest):
+A dedicated team, which can sometimes include a third party, executes the migration.
+Using a well-defined playbook, they can carry out the migration with minimal guidance, especially if the tasks are highly scriptable.
+
+Mythical man math sometimes works?
+35
+We are not 10x engineers. So, how did we manage to migrate an entire codebase of over 400 fragments in just 40 days? The key was parallelizing the work.
+Here’s how we did it:
+Parallelize the Work:We spent significant time with the codebase beforehand. This allowed us to identify distinct tracks, enabling multiple engineers to work toward the same goal simultaneously.
+Pre-Build Support Systems:Before diving into our goal, we built support systems for it. Think of linters, code generation tools, templates, testing methodologies, playgrounds, and sandboxes. These tools minimized overhead and streamlined the process.
+Comprehensive Planning and Testing:We crafted a meticulous plan that included not just a successful test strategy, but also comprehensive risk mitigation, rollback strategies, and incidental plans. These were in place before we wrote a single line of code.
+Clear Points of Contact:Establish a clear chain of command and ensure there’s always someone available to answer questions. Importantly, identify who will fix things when they break.
+Replicate Success with a Pattern:Develop a pattern or recipe for success and replicate it. This pattern should cover about 80% of use cases—yes, based on the Pareto Principle. If the task is too complex to be standardized, break it down further.
+Here’s the "ah-ha" moment:- Build before you build. Lay the foundation with the right tools and plans. Establish clear lines of communication and replicate proven patterns.
+Sometimes, you do the hard work upfront, and the payoff is great success.
+
+
+100%
+
+0%
+
+36
+2023
+2024
+Getting unblocked.
+What Did We Cover:
+Key Points:
+ScreenManager: Its crucial role in constructing Controllers and Views, and how we managed tasks like tabs, navigation bars, animations, and the backstack without relying on savedInstanceState.
+NavigationManager: How it handles navigation events, is scoped to activities, and integrates with Android's back stack.
+Challenges with Custom Requirements: Addressed custom logging, testing needs, support library issues, warm start/cold start behavior, React screen interop, and navigation UX problems.
+Migration Strategy: The practical alternatives we opted for instead of a direct migration to Jetpack Navigation, including laying the groundwork and phased integration.
+Stakeholder Alignment: Emphasized the importance of understanding and delivering what stakeholders need, managing the transitional phase effectively, and setting up monitoring and reporting tools to track progress.
+Parallelizing Work: How we managed to migrate over 400 fragments in 40 days by parallelizing tasks, planning comprehensive support systems, defining clear communication channels, and replicating successful patterns.
+Key Learnings:
+Build Before You Build: Laying the groundwork with the right tools, plans, and clear lines of communication is essential for success.
+Structured Transition: Detailed planning with risk mitigation and rollback strategies ensures a smoother migration.
+Replicable Patterns: Developing and replicating a standardized pattern can streamline complex tasks.
+Hopefully, you took away a few bits of information that will help you on your next project when you run into a wall.
+
+
+37
